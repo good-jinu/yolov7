@@ -22,7 +22,7 @@ def createmodel(weights="yolov7.pt", device='cpu'):
     return attempt_load(weights, map_location=device)  # load FP32 model
 
 
-def objcounter(model, source, device='cpu', view_img=True, save_txt=True, imgsz=640, trace=False, classes = 'human'):
+def objcounter(model, source, device='cpu', view_img=True, save_txt=True, imgsz=640, trace=False):
     # Initialize
     device = select_device(device)
     stride = int(model.stride.max())  # model stride
@@ -50,10 +50,7 @@ def objcounter(model, source, device='cpu', view_img=True, save_txt=True, imgsz=
         t2 = time_synchronized()
 
         # Apply NMS
-        if classes == 'car':
-            pred = non_max_suppression(pred, 0.375, 0.45, agnostic=True, classes = 2)
-        else:
-            pred = non_max_suppression(pred, 0.375, 0.45, agnostic=True, classes = 0)
+        pred = non_max_suppression(pred, 0.375, 0.45, agnostic=True, classes = 0)
         t3 = time_synchronized()
         print(pred)
 

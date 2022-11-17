@@ -14,6 +14,14 @@ pw=''
 def db_connect():
     return pymysql.connect(host=ht, port=pt, user='root', passwd=pw, db='congestion_db', charset='utf8')
 
+def update_congestion(placeid, count=0):
+    with conn:
+        with conn.cursor() as cs:
+            sql = "UPDATE place_info SET NumberOfHuman = %s WHERE PlaceID = %s"
+            cursor.execute(sql, (count, placeid))
+
+            conn.commit()
+
 app = Flask(__name__, static_url_path='/', static_folder='build')
 
 UPLOAD_FOLDER = os.getcwd()
@@ -21,8 +29,8 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 objcnter = createmodel()
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
+@app.route('/upload/<id>', methods=['POST'])
+def upload_file(id):
     try:
         file = request.files['imageFile']
         if file:
@@ -32,14 +40,18 @@ def upload_file():
             print('sema acquired')
 
             # 파일을 a.jpg/a.png/a.jpeg 형식으로 저장
-            filename = 'a.' + file.filename.rsplit('.', 1)[1]
+            filename = f'{id}.' + file.filename.rsplit('.', 1)[1]
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             print('image saved')
 
             # 이미지로 부터 사람 수 예측
-            res = objcounter(objcnter, os.path.join(app.config['UPLOAD_FOLDER'], filename), view_img=True, save_txt=True, imgsz=640, trace=False)
+            res = objcounter(objcnter, os.path.join(app.config['UPLOAD_FOLDER'], filename),
+                            view_img=True, save_txt=True, imgsz=640, trace=False)
             sema.release() # 세마포어 릴리즈
             print('people counted')
+
+            # 추출된 사람 수를 데이터베이스에 저장
+            update_congestion(id, res)
             return jsonify([str(res), f'{time.time() - sta:.2f}'])
     except Exception as e:
         print(e)
