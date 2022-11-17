@@ -15,10 +15,10 @@ def db_connect():
     return pymysql.connect(host=ht, port=pt, user='root', passwd=pw, db='congestion_db', charset='utf8')
 
 def update_congestion(placeid, count=0):
-    with conn:
+    with db_connect() as conn:
         with conn.cursor() as cs:
             sql = "UPDATE place_info SET NumberOfHuman = %s WHERE PlaceID = %s"
-            cursor.execute(sql, (count, placeid))
+            cs.execute(sql, (count, placeid))
 
             conn.commit()
 
